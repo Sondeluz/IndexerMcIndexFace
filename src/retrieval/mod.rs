@@ -52,7 +52,32 @@ impl Retriever {
         Self { index_keys, lengths_maps, avg_lengths_map, postings_maps, postings_data_files, index_stats }
     }
 
-    pub fn search(&self, query_token: &str, k1: f64, b: f64, field_weights : HashMap<String, f64>) -> HashMap<String, f64> {
+    pub fn search_multiple_tokens(&self,
+                                  query_tokens: &Vec<String>,
+                                  field_k1_params: &HashMap<String, f64>,
+                                  field_b_params: &HashMap<String, f64>,
+                                  field_weights : &HashMap<String, f64>) -> HashMap<String, f64> {
+        let mut results: Vec<HashMap<String, f64>> = Vec::new();
+        for token in query_tokens {
+            results.push(self.search(&token, &field_k1_params, &field_b_params, &field_weights))
+        }
+
+        let mut merged_results: HashMap<String, f64> = HashMap::new();
+
+        for map in results {
+            for (key, value) in map {
+                *merged_results.entry(key.clone()).or_insert(0.0) += value;
+            }
+        }
+
+        merged_results
+    }
+
+    pub fn search(&self,
+                  query_token: &str,
+                  field_k1_params: &HashMap<String, f64>,
+                  field_b_params: &HashMap<String, f64>,
+                  field_weights : &HashMap<String, f64>) -> HashMap<String, f64> {
         let matching_docids = self.get_matching_docids(query_token);
         let lengths = self.get_lengths(&matching_docids);
         let mut weighted_avg_lengths = HashMap::new();
@@ -73,6 +98,8 @@ impl Retriever {
             for (doc_id, tf) in postings {
                 let new_tf = field_weight * (tf as f64);
                 let weighted_doc_len = self.get_bm25f_doc_len(&doc_id, &lengths, &field_weights);
+                let k1 = field_k1_params.get(&index_key).unwrap();
+                let b = field_b_params.get(&index_key).unwrap();
 
                 let bm25f_field = (new_tf * (k1 + 1.0)) / (k1 * ((1.0 - b) + b * (weighted_doc_len / weighted_avg_lengths.get(&index_key).unwrap()) + new_tf));
 
