@@ -17,6 +17,12 @@ impl Lengths {
         self.lengths.insert(docid, length);
     }
 
+    pub fn add_lengths(&mut self, lengths_to_add: &Lengths) {
+        for (doc_id, length) in &lengths_to_add.lengths {
+            self.add_length(doc_id.clone(), *length)
+        }
+    }
+
     pub fn write_lengths(&self) -> f64 {
         let wtr = io::BufWriter::new(File::create(format!("lengths_index_{}.fst", self.index_key)).unwrap());
 

@@ -9,6 +9,8 @@ use crate::aux::{write_value, write_value_from_serialized};
 type Docid = String;
 type Tf = u64;
 
+
+#[derive(Debug)]
 struct PostingsBTree {
     postings : HashMap<
         // Token
@@ -43,6 +45,16 @@ impl PostingsBTree {
         let tf = postings_for_token.entry(docid.to_string()).or_insert(0);
         *tf += 1;
     }
+
+    pub fn add_tree(&mut self, postings_to_merge: &Postings) {
+        for (token, postings_map) in &postings_to_merge.postings_tree.postings {
+            let target_entry = self.postings.entry(token.to_string()).or_insert_with(HashMap::new);
+
+            for (doc_id, tf) in postings_map {
+                *target_entry.entry(doc_id.to_string()).or_insert(0) += tf;
+            }
+        }
+    }
 }
 
 pub struct Postings {
@@ -57,6 +69,10 @@ impl Postings {
 
     pub fn add_token_to_docid(&mut self, docid: &String, token: &str) {
         self.postings_tree.add_token_to_docid(docid, token);
+    }
+
+    pub fn add_postings(&mut self, postings_to_merge: &Postings) {
+        self.postings_tree.add_tree(postings_to_merge);
     }
 
     pub fn write_postings(&mut self) {
