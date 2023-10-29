@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io;
 use std::ptr::write;
@@ -10,20 +10,20 @@ type Docid = String;
 type Tf = u64;
 
 struct PostingsBTree {
-    postings : BTreeMap<
+    postings : HashMap<
         // Token
         String,
         // Map of postings
-        BTreeMap<Docid, Tf>>
+        HashMap<Docid, Tf>>
 }
 
 impl PostingsBTree {
     pub fn new() -> Self {
-        Self { postings: BTreeMap::new() }
+        Self { postings: HashMap::new() }
     }
 
     pub fn add_token_to_docid(&mut self, docid: &String, token: &str) {
-        if self.postings.contains_key(token) {
+        /*if self.postings.contains_key(token) {
             let mut postings_for_token = self.postings.get_mut(token).unwrap();
 
             if postings_for_token.contains_key(docid) {
@@ -37,7 +37,11 @@ impl PostingsBTree {
             postings_for_token.insert(docid.clone(), 1);
 
             self.postings.insert(token.to_string(), postings_for_token);
-        }
+        }*/
+
+        let postings_for_token = self.postings.entry(token.to_string()).or_insert_with(HashMap::new);
+        let tf = postings_for_token.entry(docid.to_string()).or_insert(0);
+        *tf += 1;
     }
 }
 
@@ -55,16 +59,19 @@ impl Postings {
         self.postings_tree.add_token_to_docid(docid, token);
     }
 
-    pub fn write_postings(&self) {
+    pub fn write_postings(&mut self) {
         let posting_positions = self.create_postings_file();
         self.create_postings_fst_file(&posting_positions);
     }
 
-    fn create_postings_file(&self) -> BTreeMap<String, u64> {
+    fn create_postings_file(&mut self) -> BTreeMap<String, u64> {
         let mut file = File::create(format!("postings_data_{}.bin", &self.index_key)).unwrap();
         let mut positions: BTreeMap<String, u64> = BTreeMap::new();
 
-        for (posting, value) in &self.postings_tree.postings {
+        let mut ordered_postings: Vec<_> = self.postings_tree.postings.drain().collect();
+        ordered_postings.sort_by(|a, b| a.0.cmp(&b.0));
+
+        for (posting, value) in &ordered_postings {
             let serialized_value = aux::serialize_value(value);
 
             // Write its length first!
