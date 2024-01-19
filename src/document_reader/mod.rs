@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use log::warn;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -40,8 +39,8 @@ impl DocumentReader {
                     if let Ok(processed_indexable_file) = self.process_json_file(entry.path()) {
                         Some(processed_indexable_file)
                     } else {
-                        warn!(
-                            "Failed to process indexable file: {}",
+                        eprintln!(
+                            "Warning: failed to process indexable file: {}",
                             entry.path().display()
                         );
                         None
@@ -51,7 +50,7 @@ impl DocumentReader {
                 }
             }
             Err(error) => {
-                warn!("Failed to retrieve directory entry: {}", error);
+                eprintln!("Warning: failed to retrieve directory entry: {}", error);
                 None
             }
         });

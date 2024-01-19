@@ -7,8 +7,7 @@ mod tokenizer;
 use crate::document_reader::*;
 use crate::indexing::Indexer;
 use anyhow::{Context, Result};
-use lipsum::lipsum_words_with_rng;
-use rand::{random, Rng};
+use rand::{Rng};
 use serde::Serialize;
 use std::collections::HashMap;
 use random_word::Lang;
@@ -47,7 +46,7 @@ fn generate_files_to_index(n_files: usize) {
         tokens_field_2.push(random_word::gen(Lang::En));
     }
 
-    for i in 0..n_files {
+    for _ in 0..n_files {
         let doc_id = get_random_doc_id();
         let data = DummyFile {
             docid: doc_id.clone(),
@@ -62,8 +61,9 @@ fn generate_files_to_index(n_files: usize) {
 }
 
 fn main() -> Result<()> {
-    println!("Generating random document collection of size 5000...");
-    generate_files_to_index(5000);
+    let n_docs = 1000;
+    println!("Generating random document collection of size {}...", n_docs);
+    generate_files_to_index(n_docs);
 
     let mut field_keys = HashMap::new(); // Document field name -> Index field name
     field_keys.insert("field1".to_string(), "field1_index_name".to_string());
