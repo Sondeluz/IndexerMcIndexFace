@@ -1,3 +1,5 @@
+// Simple tokenizer implementation that will remove any non-alphabetic and non-alphanumeric characters from the text, and
+// then split the text by whitespace
 
 #[derive(Debug)]
 pub struct Token<'a> {

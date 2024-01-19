@@ -1,10 +1,12 @@
 use std::fs::File;
 use std::io;
 use std::io::Write;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndexStats {
     pub n_docs: usize
+    // More stuff could go here
 }
 
 pub struct Stats {
@@ -16,10 +18,12 @@ impl Stats {
         Self { stats: IndexStats { n_docs } }
     }
 
-    pub fn write_stats(&self) {
-        let stats_json = serde_json::to_string(&self.stats).unwrap();
+    pub fn write_stats(&self) -> Result<()> {
+        let stats_json = serde_json::to_string(&self.stats)?;
 
-        let mut wtr = io::BufWriter::new(File::create("index_stats.json").unwrap());
-        wtr.write_all(stats_json.as_bytes()).expect("Failed to write index stats JSON file");
+        let mut wtr = io::BufWriter::new(File::create("index_stats.json")?);
+        wtr.write_all(stats_json.as_bytes())?;
+        
+        Ok(())
     }
 }

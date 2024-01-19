@@ -1,3 +1,6 @@
+// Writer for the document lengths for a given field
+
+use anyhow::Result;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io;
@@ -23,18 +26,18 @@ impl Lengths {
         }
     }
 
-    pub fn write_lengths(&self) -> f64 {
-        let wtr = io::BufWriter::new(File::create(format!("lengths_index_{}.fst", self.index_key)).unwrap());
+    pub fn write_lengths(&self) -> Result<f64> {
+        let wtr = io::BufWriter::new(File::create(format!("lengths_index_{}.fst", self.index_key))?);
 
         let mut avg_length: u64 = 0;
 
-        let mut build = MapBuilder::new(wtr).unwrap();
+        let mut build = MapBuilder::new(wtr)?;
         for (docid, length) in &self.lengths {
-            build.insert(docid, *length).unwrap();
+            build.insert(docid, *length)?;
             avg_length += length;
         }
-        build.finish().unwrap();
+        build.finish()?;
 
-        return (avg_length as f64) / (self.lengths.len() as f64)
+        Ok((avg_length as f64) / (self.lengths.len() as f64))
     }
 }
